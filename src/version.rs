@@ -1,7 +1,6 @@
 //! This module handles the detection of the firmware version from the binary data.
 
 use crate::patches::{PatchSet, PATCH_SETS_MAP};
-use std::str;
 
 const VERSION_STRING_OFFSET: usize = 0x70040;
 const VERSION_STRING_LENGTH: usize = 16;

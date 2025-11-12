@@ -11,7 +11,7 @@ use imgui_glium_renderer::Renderer;
 use imgui_winit_support::WinitPlatform;
 use std::time::Instant;
 use winit::event::{Event, WindowEvent};
-use winit::event_loop::{ControlFlow, EventLoop};
+use winit::event_loop::{EventLoop};
 
 fn apply_custom_style(ctx: &mut Context) {
     let style = ctx.style_mut();
@@ -81,10 +81,10 @@ fn main() {
     let event_loop = EventLoop::new().expect("Failed to create event loop");
     let (window, display) = SimpleWindowBuilder::new()
         .with_title("EWS IMMO Patcher MS43")
-        .with_inner_size(1200, 600)
+        .with_inner_size(1024, 768)
         .build(&event_loop);
 
-    window.set_resizable(false);
+    // window.set_resizable(false); // Allow window to be resizable
 
     let mut imgui = Context::create();
     imgui.set_ini_filename(None);

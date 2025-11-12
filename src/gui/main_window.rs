@@ -1,7 +1,7 @@
 use crate::patcher::{self, check_patch_status, PatchStatus};
 use crate::patches::PatchSet;
 use crate::version::detect_version;
-use imgui::{Condition, StyleVar, Ui};
+use imgui::{Condition, StyleVar, TabBar, TabItem, Ui};
 use std::fs;
 
 pub struct AppState {
@@ -71,10 +71,8 @@ pub fn render_main_window(ui: &mut Ui, app_state: &mut AppState) {
                 | imgui::WindowFlags::NO_SAVED_SETTINGS,
         )
         .build(|| {
-            let main_content_width = display_size[0] * 0.6;
-            ui.child_window("MainContent")
-                .size([main_content_width, 0.0])
-                .build(|| {
+            TabBar::new("MainTabBar").build(ui, || {
+                TabItem::new("Patcher").build(ui, || {
                     // Top section for file selection
                     ui.child_window("FileSelection")
                         .size([0.0, 80.0])
@@ -115,10 +113,10 @@ pub fn render_main_window(ui: &mut Ui, app_state: &mut AppState) {
 
                     // Middle section for status and actions
                     ui.child_window("StatusAndActions")
-                        .size([0.0, 150.0])
+                        .size([0.0, 200.0]) // Increased height
                         .build(|| {
                             ui.text(format!("Detected Version: {}", app_state.detected_version));
-                            ui.text("Patch Status (click to view diff):");
+                            ui.text("Patch Status (click to view diff in Hex Viewer tab):");
 
                             let (jump, code, dtc) = app_state.patch_status;
                             let green = [0.1, 0.9, 0.1, 1.0];
@@ -249,39 +247,40 @@ pub fn render_main_window(ui: &mut Ui, app_state: &mut AppState) {
                         });
                 });
 
-            ui.same_line();
+                TabItem::new("Hex Viewer").build(ui, || {
+                    let _style = ui.push_style_var(StyleVar::WindowPadding([10.0, 10.0]));
+                    ui.child_window("HexViewerContent")
+                        .size([0.0, 0.0])
+                        .build(|| {
+                            if let (Some(patch_set), Some(index)) = (app_state.patch_set, app_state.selected_patch_index) {
+                                if let Some(patch) = patch_set.patches.get(index) {
+                                    ui.text(format!("Diff for '{}' at offset {:#X}", patch.name, patch.offset));
+                                    ui.separator();
 
-            // Right column for Hex Viewer
-            let _style = ui.push_style_var(StyleVar::WindowPadding([10.0, 10.0]));
-            ui.child_window("HexViewer")
-                .size([0.0, 0.0])
-                .border(true)
-                .build(|| {
-                    if let (Some(patch_set), Some(index)) = (app_state.patch_set, app_state.selected_patch_index) {
-                        if let Some(patch) = patch_set.patches.get(index) {
-                            ui.text(format!("Diff for '{}' at offset {:#X}", patch.name, patch.offset));
-                            ui.separator();
+                                    let original_hex = bytes_to_hex_string(&patch.original);
+                                    let patched_hex = bytes_to_hex_string(&patch.patched);
 
-                            let original_hex = bytes_to_hex_string(&patch.original);
-                            let patched_hex = bytes_to_hex_string(&patch.patched);
+                                    ui.text("Original:");
+                                    let _red_text = ui.push_style_color(imgui::StyleColor::Text, [0.9, 0.2, 0.2, 1.0]);
+                                    ui.text_wrapped(&original_hex);
+                                    
 
-                            ui.text("Original:");
-                            let _green = ui.push_style_color(imgui::StyleColor::Text, [0.9, 0.1, 0.1, 1.0]);
-                            ui.text_wrapped(&original_hex);
+                                    ui.spacing();
 
-                            ui.spacing();
+                                    ui.text("Patched:");
+                                    let _green_text = ui.push_style_color(imgui::StyleColor::Text, [0.2, 0.9, 0.2, 1.0]);
+                                    ui.text_wrapped(&patched_hex);
+                                    
 
-                            ui.text("Patched:");
-                            let _red = ui.push_style_color(imgui::StyleColor::Text, [0.1, 0.9, 0.1, 1.0]);
-                            ui.text_wrapped(&patched_hex);
-
-                        } else {
-                            ui.text("No patch selected.");
-                        }
-                    } else {
-                        ui.text("Load a file and select a patch to view differences.");
-                    }
+                                } else {
+                                    ui.text("No patch selected.");
+                                }
+                            } else {
+                                ui.text("Load a file and select a patch in the 'Patcher' tab to view differences.");
+                            }
+                        });
                 });
+            });
         });
 }
 
