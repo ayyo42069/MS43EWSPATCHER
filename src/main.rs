@@ -97,16 +97,16 @@ fn main() {
         imgui_winit_support::HiDpiMode::Default,
     );
 
-    let hidpi_factor = platform.hidpi_factor();
-    let font_size = (14.0 * hidpi_factor) as f32;
-    imgui.fonts().add_font(&[FontSource::TtfData {
-        data: include_bytes!("../../../../../../../Windows/Fonts/segoeui.ttf"),
-        size_pixels: font_size,
-        config: Some(imgui::FontConfig {
-            rasterizer_multiply: 1.5,
-            ..Default::default()
-        }),
-    }]);
+    // let hidpi_factor = platform.hidpi_factor();
+    // let font_size = (14.0 * hidpi_factor) as f32;
+    // imgui.fonts().add_font(&[FontSource::TtfData {
+    //     data: include_bytes!("../../../../../../../Windows/Fonts/segoeui.ttf"),
+    //     size_pixels: font_size,
+    //     config: Some(imgui::FontConfig {
+    //         rasterizer_multiply: 1.5,
+    //         ..Default::default()
+    //     }),
+    // }]);
 
     let mut renderer = Renderer::new(&mut imgui, &display).expect("Failed to initialize renderer");
 
