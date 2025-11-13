@@ -116,6 +116,14 @@ pub fn revert_patches(data: &mut [u8], patch_set: &PatchSet) -> Result<Vec<Strin
 
     // If validation passes, revert all patches.
     for patch in &patch_set.patches {
+        if patch.patched.len() > patch.original.len() {
+            let fill_start = patch.offset + patch.original.len();
+            let fill_end = patch.offset + patch.patched.len();
+            if data.len() >= fill_end {
+                data[fill_start..fill_end].fill(0xFF);
+            }
+        }
+
         let end_offset = patch.offset + patch.original.len();
          if data.len() < end_offset {
              return Err(PatcherError::FileTooSmall { patch_name: patch.name, offset: patch.offset });
@@ -183,3 +191,38 @@ fn get_patch_status(data: &[u8], patch: &Patch) -> PatchStatus {
     PatchStatus::Unknown
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::patches::{Patch, PatchSet};
+
+    #[test]
+    fn test_revert_with_different_lengths() {
+        let patch_set = PatchSet {
+            version_string: "test_version",
+            hardware_variant: None,
+            patches: vec![Patch {
+                name: "TestPatch",
+                offset: 2,
+                original: vec![0xAA, 0xBB],
+                patched: vec![0xCC, 0xDD, 0xEE, 0xFF],
+            }],
+        };
+
+        let original_data = vec![0x00, 0x01, 0xAA, 0xBB, 0x04, 0x05];
+        let mut data = original_data.clone();
+
+        // Apply the patch
+        apply_patches(&mut data, &patch_set).unwrap();
+        assert_eq!(data, vec![0x00, 0x01, 0xCC, 0xDD, 0xEE, 0xFF]);
+
+        // Revert the patch
+        revert_patches(&mut data, &patch_set).unwrap();
+
+        // The revert won't restore the original data perfectly, because the patch was longer
+        // than the original data. We expect the reverted data to have the original bytes,
+        // followed by 0xFF bytes to fill the rest of the patched area.
+        let expected_data = vec![0x00, 0x01, 0xAA, 0xBB, 0xFF, 0xFF];
+        assert_eq!(data, expected_data);
+    }
+}
